@@ -1,0 +1,64 @@
+# Checks that run on every `git commit`, and in CI on every push.
+#
+#   pip install pre-commit          # or use the one in rad-shift's .venv
+#   pre-commit install              # once per clone: adds the git hook
+#   pre-commit run --all-files      # what CI runs
+#
+# A hook that rewrites files (whitespace fixers) stops the commit; review the
+# changes, `git add` them, and commit again. The ESLint and tsc hooks use the
+# project's own node_modules, so run `npm ci` in my-social-feed/ first.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  # Workflow files: expressions, contexts, runner labels, and shellcheck on
+  # every run: script. Caught item 17's job-level runner.temp before its
+  # first run. The Docker image variant: no Go toolchain needed.
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint-docker
+
+  # Duplicate-code ratchet (roadmap item 20): jscpd, independent of Sonar's
+  # duplication metric and stricter (50-token blocks). .jscpd.json sets the
+  # threshold just above today's level (1.27% on 2026-10-20 → 1.5%): it fails
+  # when duplication grows; lower it as clones are removed. Tests excluded.
+  - repo: local
+    hooks:
+      - id: jscpd
+        name: jscpd (duplicate code)
+        entry: jscpd --silent
+        language: node
+        additional_dependencies: ["jscpd@5.4.0"]
+        files: '\.(ts|tsx|js|jsx)$'
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      # Secret scan of the files being committed (roadmap item 4). Needs the
+      # trufflehog binary on PATH. Fails on any detection, verified or not.
+      # Skipped in the CI lint job, which has a dedicated `secrets` job.
+      - id: trufflehog
+        name: trufflehog (secrets)
+        entry: trufflehog filesystem --no-update --results=verified,unknown,unverified --fail
+        language: system
+      - id: eslint
+        name: eslint
+        entry: npm --prefix my-social-feed run lint
+        language: system
+        files: ^my-social-feed/.*\.(ts|tsx|js|jsx|mjs)$
+        pass_filenames: false # next lint checks the whole app
+      - id: typecheck
+        name: tsc --noEmit
+        entry: npm --prefix my-social-feed run typecheck
+        language: system
+        files: ^my-social-feed/.*\.(ts|tsx)$
+        pass_filenames: false # type errors can span files, so check the project

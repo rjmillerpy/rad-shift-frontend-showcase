@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+# A newer push to the same branch cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: CI only reads the repo.
+permissions:
+  contents: read
+
+# The Next.js app lives in a subfolder of this repo.
+defaults:
+  run:
+    working-directory: my-social-feed
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: my-social-feed/package-lock.json
+
+      # The ESLint and tsc hooks run from the project's node_modules.
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install pre-commit
+        run: pip install pre-commit==4.6.2
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # Exactly the hooks `git commit` runs locally: file hygiene, ESLint and
+      # tsc --noEmit. Runs from the repo root, where the config lives.
+      - name: pre-commit (ESLint, tsc, file checks)
+        working-directory: .
+        run: pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: trufflehog # covered by the `secrets` job, which scans commits rather than files
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: my-social-feed/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # --ci: never write new snapshots, fail instead. --coverage enforces the
+      # coverageThreshold floor in jest.config.ts.
+      - name: Jest
+        run: npm test -- --ci --coverage
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          # shellcheck disable=SC2016 # single quotes on purpose: the ${...} below is JavaScript
+          node -e '
+            const t = require("./coverage/coverage-summary.json").total;
+            const rows = ["statements", "branches", "functions", "lines"]
+              .map(k => `| ${k} | ${t[k].pct}% | ${t[k].covered}/${t[k].total} |`);
+            console.log(["### Frontend coverage", "| | % | covered |", "|---|---|---|", ...rows].join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY" || true
+
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0 # needs the history between the previous and the new head
+
+      # Scans only the commits in this push, from the repo root (actions ignore
+      # the job's working-directory default). Fails on any detection, verified
+      # or not: a key that can't be verified is still a leak.
+      - name: Trufflehog (commits in this push)
+        uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9 # v3.99.2
+        with:
+          # The action's scanner image defaults to "latest"; pin it too. Dependabot
+          # bumps the `uses:` tag above but not this input: update both together.
+          version: 3.99.2
+          extra_args: --results=verified,unknown,unverified
+
+  build:
+    # Only spend time building the image once lint and tests pass.
+    # The image build runs `next build`, which also type-checks src/.
+    needs: [lint, test, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      # Build only, no push: there is no registry yet (roadmap item 10 adds ECR).
+      - name: Build frontend image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: my-social-feed
+          push: false
+          tags: radshift-frontend:ci
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:5000
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

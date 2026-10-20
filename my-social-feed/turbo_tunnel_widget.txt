@@ -1,0 +1,364 @@
+=== WIDGET SETTINGS ===
+Title: Turbo Tunnel Runner
+Category: Games
+Language: javascript
+Execution Mode: Client
+
+=== HTML PANEL ===
+
+<canvas id="game" width="400" height="300"></canvas>
+<div id="hud">
+  <span id="score">0</span>
+  <span id="speed">SPEED: 1</span>
+</div>
+<div id="start-screen">
+  <div class="title">TURBO TUNNEL</div>
+  <div class="sub">Arrow Keys / Tap to dodge</div>
+  <div class="blink">PRESS ENTER TO START</div>
+</div>
+<div id="game-over" style="display:none">
+  <div class="title">WIPEOUT</div>
+  <div id="final-score"></div>
+  <div class="blink">PRESS ENTER TO RETRY</div>
+</div>
+
+=== CSS PANEL ===
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a12; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+canvas { display: block; image-rendering: pixelated; }
+#hud { position: absolute; top: 8px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 16px; font-family: 'Courier New', monospace; font-size: 14px; color: #0ff; text-shadow: 0 0 8px #0ff; }
+#speed { color: #f0f; text-shadow: 0 0 8px #f0f; }
+#start-screen, #game-over { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); z-index: 10; }
+.title { font-family: 'Courier New', monospace; font-size: 28px; font-weight: bold; color: #0ff; text-shadow: 0 0 20px #0ff, 0 0 40px #08f; letter-spacing: 6px; margin-bottom: 12px; }
+.sub { font-family: 'Courier New', monospace; font-size: 12px; color: #888; margin-bottom: 24px; }
+.blink { font-family: 'Courier New', monospace; font-size: 14px; color: #f0f; animation: blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+#game-over .title { color: #f44; text-shadow: 0 0 20px #f44, 0 0 40px #a00; }
+#final-score { font-family: 'Courier New', monospace; font-size: 16px; color: #ff0; margin-bottom: 16px; }
+#game-over { display: none; }
+
+=== JS PANEL ===
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const scoreEl = document.getElementById("score");
+const speedEl = document.getElementById("speed");
+const startScreen = document.getElementById("start-screen");
+const gameOverScreen = document.getElementById("game-over");
+const finalScoreEl = document.getElementById("final-score");
+
+// Game state
+let state = "start"; // start, playing, dead
+let frame = 0;
+let score = 0;
+let speed = 3;
+let speedLevel = 1;
+
+// Player (motorcycle rider)
+const player = { x: 80, y: H - 60, w: 30, h: 24, lane: 1, targetY: H - 60, vy: 0 };
+const LANES = [H - 100, H - 60, H - 20];
+const GROUND_Y = H - 10;
+
+// Pillars
+let pillars = [];
+const PILLAR_W = 28;
+const GAP_MIN = 60;
+
+// Road lines
+let roadOffset = 0;
+
+// Stars / particles
+const stars = Array.from({ length: 40 }, () => ({
+  x: Math.random() * W, y: Math.random() * (H - 40),
+  s: Math.random() * 1.5 + 0.5, speed: Math.random() * 2 + 1,
+}));
+
+// Explosions
+let particles = [];
+
+function spawnPillar() {
+  // Random gap position — leave one lane open
+  const openLane = Math.floor(Math.random() * 3);
+  for (let i = 0; i < 3; i++) {
+    if (i === openLane) continue;
+    const variant = Math.random();
+    // Sometimes leave two lanes open for breathing room
+    if (variant < 0.3 && i !== openLane) continue;
+    pillars.push({
+      x: W + 20,
+      y: LANES[i] - 10,
+      w: PILLAR_W,
+      h: 34,
+      color: `hsl(${180 + Math.random() * 60}, 80%, ${40 + Math.random() * 20}%)`,
+      glow: `hsl(${180 + Math.random() * 60}, 90%, 60%)`,
+    });
+  }
+}
+
+function drawRoad() {
+  // Ground
+  ctx.fillStyle = "#1a1a2e";
+  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+  // Road surface
+  const gradient = ctx.createLinearGradient(0, H - 110, 0, H);
+  gradient.addColorStop(0, "#12121f");
+  gradient.addColorStop(1, "#1e1e32");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, H - 110, W, 110);
+
+  // Lane lines
+  roadOffset = (roadOffset + speed) % 20;
+  ctx.strokeStyle = "#2a2a4a";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([8, 12]);
+  for (let i = 0; i < 3; i++) {
+    const y = LANES[i] + 6;
+    ctx.beginPath();
+    ctx.lineDashOffset = -roadOffset;
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Road edge glow
+  ctx.strokeStyle = "#0ff3";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, H - 112);
+  ctx.lineTo(W, H - 112);
+  ctx.stroke();
+}
+
+function drawStars() {
+  stars.forEach(s => {
+    s.x -= s.speed * (speed / 3);
+    if (s.x < 0) { s.x = W; s.y = Math.random() * (H - 50); }
+    ctx.fillStyle = `rgba(200, 220, 255, ${0.3 + s.s * 0.3})`;
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+  });
+}
+
+function drawPlayer() {
+  const { x, y } = player;
+
+  // Hover glow
+  ctx.shadowColor = "#f0f";
+  ctx.shadowBlur = 12;
+
+  // Motorcycle body
+  ctx.fillStyle = "#c0c";
+  ctx.fillRect(x, y + 8, 28, 8);
+  ctx.fillRect(x + 4, y + 4, 20, 6);
+
+  // Rider body
+  ctx.fillStyle = "#ddd";
+  ctx.fillRect(x + 14, y - 4, 8, 10);
+
+  // Rider head (helmet)
+  ctx.fillStyle = "#f0f";
+  ctx.fillRect(x + 15, y - 10, 6, 7);
+
+  // Visor
+  ctx.fillStyle = "#0ff";
+  ctx.fillRect(x + 19, y - 8, 3, 3);
+
+  // Wheels
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(x + 2, y + 14, 6, 4);
+  ctx.fillRect(x + 22, y + 14, 6, 4);
+
+  // Wheel glow
+  ctx.fillStyle = "#f0f8";
+  ctx.fillRect(x + 2, y + 18, 6, 2);
+  ctx.fillRect(x + 22, y + 18, 6, 2);
+
+  // Exhaust trail
+  for (let i = 0; i < 3; i++) {
+    const ex = x - 4 - i * 6 + Math.random() * 2;
+    const ey = y + 10 + Math.random() * 4;
+    ctx.fillStyle = `rgba(255, ${100 + i * 50}, 0, ${0.6 - i * 0.2})`;
+    ctx.fillRect(ex, ey, 4 - i, 3 - i);
+  }
+
+  ctx.shadowBlur = 0;
+}
+
+function drawPillar(p) {
+  // Pillar shadow
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.fillRect(p.x + 4, p.y + 4, p.w, p.h);
+
+  // Pillar body
+  ctx.fillStyle = p.color;
+  ctx.fillRect(p.x, p.y, p.w, p.h);
+
+  // Top edge highlight
+  ctx.fillStyle = p.glow;
+  ctx.fillRect(p.x, p.y, p.w, 3);
+
+  // Warning stripes
+  ctx.fillStyle = "#ff04";
+  for (let i = 0; i < p.h; i += 8) {
+    ctx.fillRect(p.x, p.y + i, p.w, 2);
+  }
+
+  // Side glow
+  ctx.shadowColor = p.glow;
+  ctx.shadowBlur = 10;
+  ctx.fillStyle = p.glow + "44";
+  ctx.fillRect(p.x - 2, p.y, 2, p.h);
+  ctx.fillRect(p.x + p.w, p.y, 2, p.h);
+  ctx.shadowBlur = 0;
+}
+
+function explode(x, y) {
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: (Math.random() - 0.5) * 8,
+      life: 30 + Math.random() * 20,
+      color: ["#f0f", "#0ff", "#ff0", "#f44", "#fff"][Math.floor(Math.random() * 5)],
+      size: Math.random() * 4 + 1,
+    });
+  }
+}
+
+function drawParticles() {
+  particles = particles.filter(p => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    p.vy += 0.15;
+    const alpha = p.life / 50;
+    ctx.fillStyle = p.color + Math.floor(alpha * 255).toString(16).padStart(2, "0");
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+    return p.life > 0;
+  });
+}
+
+function checkCollision() {
+  for (const p of pillars) {
+    const hit = player.x + player.w > p.x + 4 &&
+                player.x < p.x + p.w - 4 &&
+                player.y + player.h > p.y + 4 &&
+                player.y < p.y + p.h - 4;
+    if (hit) return true;
+  }
+  return false;
+}
+
+function update() {
+  frame++;
+
+  // Increase speed over time
+  if (frame % 300 === 0) {
+    speed += 0.5;
+    speedLevel++;
+    speedEl.textContent = "SPEED: " + speedLevel;
+  }
+
+  // Smooth lane movement
+  player.targetY = LANES[player.lane];
+  player.y += (player.targetY - player.y) * 0.25;
+
+  // Spawn pillars
+  const spawnRate = Math.max(30, 70 - speedLevel * 5);
+  if (frame % spawnRate === 0) spawnPillar();
+
+  // Move pillars
+  pillars = pillars.filter(p => {
+    p.x -= speed;
+    return p.x + p.w > -10;
+  });
+
+  // Score
+  score = Math.floor(frame * speed / 10);
+  scoreEl.textContent = score;
+
+  // Collision
+  if (checkCollision()) {
+    explode(player.x + player.w / 2, player.y + player.h / 2);
+    state = "dead";
+    finalScoreEl.textContent = "SCORE: " + score;
+    gameOverScreen.style.display = "flex";
+  }
+}
+
+function draw() {
+  // Clear
+  ctx.fillStyle = "#0a0a12";
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars();
+  drawRoad();
+  pillars.forEach(drawPillar);
+  if (state === "playing") drawPlayer();
+  drawParticles();
+}
+
+function gameLoop() {
+  if (state === "playing") update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function reset() {
+  frame = 0;
+  score = 0;
+  speed = 3;
+  speedLevel = 1;
+  player.lane = 1;
+  player.y = LANES[1];
+  pillars = [];
+  particles = [];
+  speedEl.textContent = "SPEED: 1";
+}
+
+// Input handling
+document.addEventListener("keydown", (e) => {
+  if (state === "start" && e.key === "Enter") {
+    state = "playing";
+    startScreen.style.display = "none";
+    reset();
+    return;
+  }
+  if (state === "dead" && e.key === "Enter") {
+    state = "playing";
+    gameOverScreen.style.display = "none";
+    reset();
+    return;
+  }
+  if (state !== "playing") return;
+
+  if ((e.key === "ArrowUp" || e.key === "w") && player.lane > 0) {
+    player.lane--;
+  }
+  if ((e.key === "ArrowDown" || e.key === "s") && player.lane < 2) {
+    player.lane++;
+  }
+});
+
+// Touch controls for mobile
+let touchStartY = 0;
+document.addEventListener("touchstart", (e) => {
+  if (state === "start") { state = "playing"; startScreen.style.display = "none"; reset(); return; }
+  if (state === "dead") { state = "playing"; gameOverScreen.style.display = "none"; reset(); return; }
+  touchStartY = e.touches[0].clientY;
+});
+document.addEventListener("touchend", (e) => {
+  if (state !== "playing") return;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (dy < -20 && player.lane > 0) player.lane--;
+  if (dy > 20 && player.lane < 2) player.lane++;
+});
+
+// Start game loop
+gameLoop();
+
+=== COMPUTE PANEL ===
+(leave empty - this is a client-side only game)

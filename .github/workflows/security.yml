@@ -1,0 +1,53 @@
+name: Security
+
+# Item 21: free stand-ins for commercial SAST/SCA: Semgrep on the code and
+# npm audit on the production dependencies (what ships). The image is scanned
+# by Grype in publish.yml, before it reaches ECR.
+#
+# Dev-only advisories (ESLint's and Jest's braces/micromatch/sprintf-js) are
+# not gated: they never ship, and npm's suggested fix is downgrading Jest to
+# 25 and eslint-config-next by two majors.
+#
+# Weekly as well as on changes: new CVEs are published against code that
+# hasn't changed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays 07:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  scan:
+    # A Dependabot PR brings in new third-party code; it isn't run on the host.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      SEMGREP_IMAGE: semgrep/semgrep:1.179.0@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b
+    steps:
+      # Pinned to commit SHAs: this job runs on your machine.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # --metrics=off: nothing about the code is reported to semgrep.dev.
+      - name: Semgrep
+        run: |
+          docker run --rm -v "$PWD:/src:ro" "$SEMGREP_IMAGE" \
+            semgrep scan --metrics=off --error --quiet \
+            --config p/default --config p/typescript --config p/react /src
+
+      - name: npm audit (production dependencies)
+        working-directory: my-social-feed
+        run: npm audit --omit=dev --audit-level=high

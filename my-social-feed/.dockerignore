@@ -1,0 +1,24 @@
+# Rebuilt inside the image; copying local copies would be slow and wrong-platform.
+node_modules
+.next
+
+# Tests, coverage, and tooling caches
+__tests__
+__mocks__
+coverage
+.coverage
+.pytest_cache
+.swc
+jest.config.ts
+jest.setup.ts
+tsconfig.tsbuildinfo
+
+# Secrets / local config: NEXT_PUBLIC_API_URL comes from a build arg instead.
+.env*
+
+# Docs and scratch files
+docs
+turbo_tunnel_widget.txt
+*.md
+Dockerfile
+.dockerignore

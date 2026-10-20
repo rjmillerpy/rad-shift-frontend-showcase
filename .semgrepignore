@@ -1,0 +1,7 @@
+# Semgrep (item 21) scans the code that ships. Tests exercise insecure inputs
+# on purpose; dependencies and build output aren't ours.
+my-social-feed/__tests__/
+my-social-feed/__mocks__/
+node_modules/
+.next/
+coverage/

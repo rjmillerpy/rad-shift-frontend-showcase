@@ -1,0 +1,8 @@
+{
+  "path": ["my-social-feed/src"],
+  "format": ["typescript", "tsx", "javascript", "jsx"],
+  "minTokens": 50,
+  "threshold": 1.5,
+  "reporters": ["console"],
+  "gitignore": true
+}
