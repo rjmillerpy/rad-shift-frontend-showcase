@@ -31,8 +31,10 @@ RUN npm run build
 # perl or util-linux, which is most of what an image scanner finds in
 # node:24-slim (item 21: 247 matches, 7 critical, before). Node is at
 # /nodejs/bin/node and isn't on PATH, so healthchecks name it in full.
-# Pinned by digest; Dependabot proposes newer digests.
-FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:c1326ce1aad4b976dce3a3da8b7eb5c8328e635e312309a7a0e5319d1470be0d AS runtime
+# Pinned by digest; Dependabot proposes newer digests. Current: Node 24.22.2,
+# first published 2026-10-31 (distroless digests report a 1970 build date;
+# the oldest distroless commit tagged on a digest dates it).
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:b8cec4b2f2126ff7bd034ec9ac207ffb3272667dfdc48376e3b035d3270549ba AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

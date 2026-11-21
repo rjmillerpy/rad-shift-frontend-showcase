@@ -139,3 +139,7 @@ dist
 
 # Local SonarQube scanner work dir (rad-shift scripts/sonarqube-local.sh)
 .scannerwork/
+
+# Python bytecode (open_core/ tools)
+__pycache__/
+*.pyc
