@@ -34,7 +34,7 @@ RUN npm run build
 # Pinned by digest; Dependabot proposes newer digests. Current: Node 24.22.2,
 # first published 2026-10-31 (distroless digests report a 1970 build date;
 # the oldest distroless commit tagged on a digest dates it).
-FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:b8cec4b2f2126ff7bd034ec9ac207ffb3272667dfdc48376e3b035d3270549ba AS runtime
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:6abfcb367ebc291572c774c1592a986be2ab26a2486f73093401327495a5962a AS runtime
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
