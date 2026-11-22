@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import Modal from "./Modal";
+import { FEED_IMAGE_SIZES, GALLERY_CELL_SIZES, LIGHTBOX_IMAGE_SIZES, srcSetFor, type ImageVariants } from "@/lib/imageVariants";
 
 // The grid shows this many images inline; anything beyond gets a "+N" overlay
 // on the last cell (rule 8 — same value referenced three times).
@@ -8,10 +9,12 @@ const GALLERY_VISIBLE_CELLS = 4;
 
 type ImageGalleryProps = {
   images: string[];
+  /** The post's image_variants, for a srcset per image. */
+  variants?: ImageVariants | null;
   maxHeight?: number;
 };
 
-export default function ImageGallery({ images, maxHeight = 400 }: ImageGalleryProps) {
+export default function ImageGallery({ images, variants, maxHeight = 400 }: ImageGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
@@ -23,6 +26,8 @@ export default function ImageGallery({ images, maxHeight = 400 }: ImageGalleryPr
     return (
       <img
         src={images[0]}
+        srcSet={srcSetFor(variants, images[0])}
+        sizes={FEED_IMAGE_SIZES}
         alt="Post"
         crossOrigin="anonymous"
         onClick={() => setLightboxOpen(true)}
@@ -76,6 +81,8 @@ export default function ImageGallery({ images, maxHeight = 400 }: ImageGalleryPr
           >
             <img
               src={url}
+              srcSet={srcSetFor(variants, url)}
+              sizes={GALLERY_CELL_SIZES}
               alt={`Image ${i + 1}`}
               crossOrigin="anonymous"
               style={{
@@ -118,6 +125,8 @@ export default function ImageGallery({ images, maxHeight = 400 }: ImageGalleryPr
         >
             <img
               src={images[activeIndex]}
+              srcSet={srcSetFor(variants, images[activeIndex])}
+              sizes={LIGHTBOX_IMAGE_SIZES}
               alt={`Image ${activeIndex + 1}`}
               crossOrigin="anonymous"
               style={{ maxWidth: "90vw", maxHeight: "80vh", objectFit: "contain", display: "block", borderRadius: "4px" }}

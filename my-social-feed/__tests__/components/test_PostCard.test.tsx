@@ -82,6 +82,21 @@ describe('PostCard', () => {
     expect(img).toBeInTheDocument();
   });
 
+  it('offers the recorded image sizes as a proxied srcset', () => {
+    const url = 'http://img.com/pic.jpg';
+    const variants = { [url]: { '480': 'http://img.com/pic-480.webp', '2000': url } };
+    render(<PostCard post={makePost({ image_url: url, image_variants: variants })} {...defaultProps} />);
+    const srcSet = screen.getByAltText('Post').getAttribute('srcset') ?? '';
+    expect(srcSet.split(', ').map((c) => c.split(' ')[1])).toEqual(['480w', '2000w']);
+    expect(srcSet).toContain('/api/image-proxy?url=');
+    expect(screen.getByAltText('Post')).toHaveAttribute('sizes');
+  });
+
+  it('has no srcset before the media pipeline has run', () => {
+    render(<PostCard post={makePost({ image_url: 'http://img.com/pic.jpg' })} {...defaultProps} />);
+    expect(screen.getByAltText('Post')).not.toHaveAttribute('srcset');
+  });
+
   it('renders video media', () => {
     render(<PostCard post={makePost({ video_url: 'http://vid.com/video.mp4' })} {...defaultProps} />);
     const video = document.querySelector('video');

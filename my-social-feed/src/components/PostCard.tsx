@@ -15,6 +15,7 @@ const ImageGallery = dynamic(() => import("@/components/ImageGallery"), { ssr: f
 import { DEFAULT_AVATAR } from "@/lib/config";
 import { proxyIfNeeded } from "@/lib/utils";
 import type { Post } from "@/types/post";
+import { FEED_IMAGE_SIZES, srcSetFor } from "@/lib/imageVariants";
 
 type PostCardProps = {
   post: Post;
@@ -170,10 +171,12 @@ function PostCard({
         {post.quoted_post && <QuotedPostPreview quotedPost={post.quoted_post} />}
 
         {(post.image_urls && post.image_urls.length > 1) ? (
-          <ImageGallery images={post.image_urls} />
+          <ImageGallery images={post.image_urls} variants={post.image_variants} />
         ) : post.image_url ? (
           <img
             src={proxyIfNeeded(post.image_url)}
+            srcSet={srcSetFor(post.image_variants, post.image_url, proxyIfNeeded)}
+            sizes={FEED_IMAGE_SIZES}
             crossOrigin="anonymous"
             alt="Post"
             style={{

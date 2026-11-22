@@ -7,6 +7,7 @@ import { proxyIfNeeded } from "@/lib/utils";
 import type { Post } from "@/types/post";
 
 import { REACTION_ACTIONS, type ReactionAction } from "../constants";
+import { FEED_IMAGE_SIZES, srcSetFor } from "@/lib/imageVariants";
 
 type ForumPostProps = {
   post: Post;
@@ -102,9 +103,9 @@ export default function ForumPost({
           </div>
 
           {(p.image_urls && p.image_urls.length > 1) ? (
-            <ImageGallery images={p.image_urls} />
+            <ImageGallery images={p.image_urls} variants={p.image_variants} />
           ) : p.image_url ? (
-            <img src={p.image_url} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: "2px", border: "1px solid #ddd", marginBottom: "8px" }} />
+            <img src={p.image_url} srcSet={srcSetFor(p.image_variants, p.image_url)} sizes={FEED_IMAGE_SIZES} alt="" crossOrigin="anonymous" style={{ maxWidth: "100%", maxHeight: "400px", borderRadius: "2px", border: "1px solid #ddd", marginBottom: "8px" }} />
           ) : null}
           {p.video_url && <video src={p.video_url} controls playsInline preload="metadata" style={{ maxWidth: "100%", maxHeight: "400px", marginBottom: "8px" }} />}
           {p.audio_url && <audio src={p.audio_url} controls preload="metadata" style={{ width: "100%", marginBottom: "8px" }} />}

@@ -1,3 +1,5 @@
+import type { ImageVariants } from "@/lib/imageVariants";
+
 export interface PostSourceMetadata {
   platform: string;
   name: string;
@@ -45,6 +47,8 @@ export interface Post {
   profile_picture_url?: string | null;
   image_url?: string | null;
   image_urls?: string[];
+  /** Every width each image is available at (lib/imageVariants.ts). */
+  image_variants?: ImageVariants | null;
   video_url?: string | null;
   audio_url?: string | null;
   document_urls?: string[] | null;

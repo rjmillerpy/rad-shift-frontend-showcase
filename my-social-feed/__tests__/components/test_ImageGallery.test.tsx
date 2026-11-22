@@ -124,4 +124,33 @@ describe("ImageGallery", () => {
       expect(container.innerHTML).toBe("");
     });
   });
+
+  describe("Responsive sizes", () => {
+    const images = ["https://img.com/1.jpg", "https://img.com/2.jpg"];
+    const variants = {
+      "https://img.com/1.jpg": { "480": "https://img.com/1-480.webp", "3000": "https://img.com/1.jpg" },
+    };
+
+    it("gives each cell its own srcset, and none to an image without sizes", () => {
+      render(<ImageGallery images={images} variants={variants} />);
+      expect(screen.getByAltText("Image 1")).toHaveAttribute(
+        "srcset",
+        "https://img.com/1-480.webp 480w, https://img.com/1.jpg 3000w",
+      );
+      expect(screen.getByAltText("Image 2")).not.toHaveAttribute("srcset");
+    });
+
+    it("uses the sizes in the lightbox too", () => {
+      render(<ImageGallery images={images} variants={variants} />);
+      fireEvent.click(screen.getByTestId("gallery-image-0"));
+      const lightboxImage = screen.getAllByAltText("Image 1").at(-1);
+      expect(lightboxImage).toHaveAttribute("sizes", "90vw");
+      expect(lightboxImage?.getAttribute("srcset")).toContain("480w");
+    });
+
+    it("works for a single image", () => {
+      render(<ImageGallery images={["https://img.com/1.jpg"]} variants={variants} />);
+      expect(screen.getByAltText("Post").getAttribute("srcset")).toContain("3000w");
+    });
+  });
 });

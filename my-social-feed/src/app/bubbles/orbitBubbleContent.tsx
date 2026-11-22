@@ -5,6 +5,7 @@ import { isPlaceholderAvatar, proxyIfNeeded } from "@/lib/utils";
 import type { Post } from "@/types/post";
 import type { OrbitItem } from "./types";
 import { GENERAL_TOPICS, HEX_AVATAR_CLIP } from "./constants";
+import { BUBBLE_IMAGE_SIZES, srcSetFor } from "@/lib/imageVariants";
 
 // Character caps for text truncation inside a bubble body.
 const AUDIO_CAPTION_MAX_CHARS = 40;
@@ -148,7 +149,7 @@ function ImageBubbleContent({ post, carouselIndex }: { post: Post; carouselIndex
   const idx = (carouselIndex[post.id] || 0) % imgs.length;
   return (
     <div data-testid="image-bubble" style={{ width: "100%", height: "100%", overflow: "hidden", borderRadius: "inherit", position: "relative" }}>
-      <img src={proxyIfNeeded(imgs[idx])} alt=""
+      <img src={proxyIfNeeded(imgs[idx])} srcSet={srcSetFor(post.image_variants, imgs[idx], proxyIfNeeded)} sizes={BUBBLE_IMAGE_SIZES} alt=""
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "opacity 0.5s" }}
         onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_AVATAR; }} />
       {imgs.length > 1 && (

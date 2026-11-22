@@ -9,6 +9,7 @@ import { normalizePosts } from "@/lib/postUtils";
 import { MOSAIC_PAGE_SIZE } from "@/lib/constants";
 import { useAuth } from "@/hooks/useAuth";
 import type { Post } from "@/types/post";
+import { GALLERY_CELL_SIZES, srcSetFor } from "@/lib/imageVariants";
 
 const MOSAIC_TABS = ["algo", "following"] as const;
 type MosaicTab = (typeof MOSAIC_TABS)[number];
@@ -184,7 +185,7 @@ export default function MosaicPage() {
                     WebkitClipPath: HEXAGON_CLIP,
                     overflow: "hidden",
                   }}>
-                    <img src={mainImage} alt="" crossOrigin="anonymous"
+                    <img src={mainImage} srcSet={srcSetFor(post.image_variants, mainImage)} sizes={GALLERY_CELL_SIZES} alt="" crossOrigin="anonymous"
                       style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                   </div>
                 )}
