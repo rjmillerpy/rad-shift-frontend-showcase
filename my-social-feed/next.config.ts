@@ -25,7 +25,12 @@ export default withSentryConfig(nextConfig, {
   // Maps are matched to events by the debug ids injected into each bundle,
   // not by release, so no release record is created here (the runtime
   // still reports the commit as its release, src/lib/errorTracking.ts).
-  release: { name: process.env.NEXT_PUBLIC_SENTRY_RELEASE || undefined, create: false },
+  release: {
+    name: process.env.NEXT_PUBLIC_SENTRY_RELEASE || undefined,
+    create: false,
+    finalize: false,
+    setCommits: false,
+  },
   sourcemaps: {
     disable: sentryAuthToken === undefined,
     deleteSourcemapsAfterUpload: true,
