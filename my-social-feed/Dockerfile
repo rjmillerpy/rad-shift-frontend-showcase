@@ -32,7 +32,10 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_SENTRY_RELEASE=$NEXT_PUBLIC_SENTRY_RELEASE \
     NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+# The Sentry token (source map upload, next.config.ts) is a BuildKit secret:
+# an env var for this one command, never in a layer or the image history.
+# No secret passed (local builds): no maps generated, nothing uploaded.
+RUN --mount=type=secret,id=sentry_auth_token,env=SENTRY_AUTH_TOKEN npm run build
 
 # ── 3. runtime: just the standalone server + static assets ────────────────
 # Distroless: node and its runtime libraries only. No shell, package manager,
