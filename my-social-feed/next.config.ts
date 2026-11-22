@@ -22,9 +22,10 @@ const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN || undefined;
 export default withSentryConfig(nextConfig, {
   project: "rad-shift-frontend",
   authToken: sentryAuthToken,
-  // The same release the runtime reports (src/lib/errorTracking.ts), so
-  // Sentry matches each event to this build's maps.
-  release: { name: process.env.NEXT_PUBLIC_SENTRY_RELEASE || undefined },
+  // Maps are matched to events by the debug ids injected into each bundle,
+  // not by release, so no release record is created here (the runtime
+  // still reports the commit as its release, src/lib/errorTracking.ts).
+  release: { name: process.env.NEXT_PUBLIC_SENTRY_RELEASE || undefined, create: false },
   sourcemaps: {
     disable: sentryAuthToken === undefined,
     deleteSourcemapsAfterUpload: true,
