@@ -21,7 +21,15 @@ COPY . .
 # this must be the backend URL as the *browser* sees it, not a Docker
 # service name like http://backend:5000. Changing it means rebuilding.
 ARG NEXT_PUBLIC_API_URL=http://localhost:5000
+# Error tracking (item 25, src/lib/errorTracking.ts). No DSN: off. Publish
+# passes the repository variable and the commit as the release.
+ARG NEXT_PUBLIC_SENTRY_DSN=""
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT=local
+ARG NEXT_PUBLIC_SENTRY_RELEASE=""
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN \
+    NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT \
+    NEXT_PUBLIC_SENTRY_RELEASE=$NEXT_PUBLIC_SENTRY_RELEASE \
     NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
