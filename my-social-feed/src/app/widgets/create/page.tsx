@@ -122,12 +122,13 @@ export default function WidgetCreatePage() {
         code,
         css: cssCode || null,
         execution_mode: executionMode,
-        compute_code: computeCode || null,
+        compute_panel: computeCode || null,
         compute_language: showCompute ? computeLanguage : null,
-        submit_for_review: submit,
       };
       const res = await api.post("/widgets", body);
       const id = res.data.id ?? res.data.widget?.id;
+      // Creating saves a draft; sending it to the admin review queue is its own step.
+      if (submit && id) await api.post("/widgets/submit", { widget_id: id });
       router.push(id ? `/widgets/${id}` : "/widgets");
     } catch (e) {
       console.error("Save failed:", e);

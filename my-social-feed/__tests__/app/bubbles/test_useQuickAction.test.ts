@@ -85,14 +85,15 @@ describe("useQuickAction — share", () => {
 });
 
 describe("useQuickAction — slop and report", () => {
+  // A report goes to the moderation queue (/posts/report), not the slop list.
   it.each([
-    ["slop", "AI", { reason: "AI" }, false],
-    ["report", "Spam", { reason: "[REPORT] Spam" }, true],
-  ])("%s sends the reason and removes the post from the list", async (action, reason, body, confirms) => {
+    ["slop", "AI", "/posts/slop/42", false],
+    ["report", "Spam", "/posts/report/42", true],
+  ])("%s sends the reason and removes the post from the list", async (action, reason, path, confirms) => {
     promptSpy.mockReturnValue(reason);
     mockedApi.post.mockResolvedValue({ data: {} });
     const { applied } = await run(action);
-    expect(mockedApi.post).toHaveBeenCalledWith("/posts/slop/42", body);
+    expect(mockedApi.post).toHaveBeenCalledWith(path, { reason });
     expect(applied()).toEqual([bystander]);
     expect(alertSpy).toHaveBeenCalledTimes(confirms ? 1 : 0);
   });

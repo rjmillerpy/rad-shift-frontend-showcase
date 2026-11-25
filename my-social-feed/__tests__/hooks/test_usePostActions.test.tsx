@@ -167,20 +167,6 @@ describe("usePostActions", () => {
     });
   });
 
-  describe("reportPost", () => {
-    it("calls report API and removes post from list", async () => {
-      mockedApi.post.mockResolvedValue({ data: {} });
-      const { result, getPosts } = setup();
-
-      expect(getPosts()).toHaveLength(2);
-      await act(async () => { await result.current.reportPost(1); });
-
-      expect(mockedApi.post).toHaveBeenCalledWith("/posts/report/1");
-      expect(getPosts()).toHaveLength(1);
-      expect(getPosts()[0].id).toBe(2);
-    });
-  });
-
   describe("only updates the targeted post", () => {
     it("does not modify other posts when liking", async () => {
       mockedApi.post.mockResolvedValue({ data: { likes: 5, action: "liked" } });

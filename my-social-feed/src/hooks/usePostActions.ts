@@ -109,18 +109,6 @@ export function usePostActions(setPosts: PostUpdater) {
     [updatePost]
   );
 
-  const reportPost = useCallback(
-    async (postId: number) => {
-      try {
-        await api.post(`/posts/report/${postId}`);
-        setPosts((prev) => prev.filter((p) => p.id !== postId));
-      } catch (e) {
-        console.error("Report failed", e);
-      }
-    },
-    [setPosts]
-  );
-
   return {
     toggleLike,
     toggleLaugh,
@@ -128,6 +116,5 @@ export function usePostActions(setPosts: PostUpdater) {
     toggleSave,
     sharePost,
     reportSlop,
-    reportPost,
   };
 }

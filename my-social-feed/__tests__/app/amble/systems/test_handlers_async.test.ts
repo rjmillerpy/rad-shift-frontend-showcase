@@ -5,6 +5,9 @@ import {
 } from "@/app/amble/systems/handlers";
 import type { EntityAnchor } from "@/app/amble/data/schema";
 import { TOWN } from "@/app/amble/data/town";
+import { serveStubContent } from "../_serveStubContent";
+
+jest.mock("@/lib/api");
 
 // Every town has a wandering NPC with a few canned posts (data/town.ts).
 const WANDERER_POSTS = TOWN.stubPosts.wanderer;
@@ -17,6 +20,7 @@ const anchor = (id: string, type: EntityAnchor["type"] = "npc"): EntityAnchor =>
 
 describe("resolveInteraction", () => {
   beforeEach(() => {
+    serveStubContent();
     _resetHandlersForTests();
     // Re-register the specific handlers we care about below since the
     // reset clears the module state. Type-defaults are re-registered when

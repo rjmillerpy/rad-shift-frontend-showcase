@@ -408,9 +408,10 @@ describe("PostDetailPage", () => {
     await waitFor(() => expect(screen.getByText("Report Post")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Submit Report"));
     await waitFor(() => {
+      // A report goes to the moderation queue, not the slop list.
       expect(mockedApi.post).toHaveBeenCalledWith(
-        expect.stringContaining("/posts/slop/42"),
-        expect.objectContaining({ reason: expect.stringContaining("[REPORT]") })
+        "/posts/report/42",
+        expect.objectContaining({ reason: expect.any(String) })
       );
     });
   });

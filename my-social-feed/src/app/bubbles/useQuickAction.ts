@@ -42,7 +42,8 @@ export function useQuickAction(mutatePosts: (fn: (prev: Post[]) => Post[]) => vo
           "Harassment or Bullying",
         );
         if (!reason) return;
-        await api.post(`/posts/slop/${post.id}`, { reason: `[REPORT] ${reason}` });
+        // To the admin moderation queue (reports used to be filed as slop marks).
+        await api.post(`/posts/report/${post.id}`, { reason });
         mutatePosts((prev) => prev.filter((p) => p.id !== post.id));
         alert("Report submitted. This post will no longer appear in your feed.");
         return;

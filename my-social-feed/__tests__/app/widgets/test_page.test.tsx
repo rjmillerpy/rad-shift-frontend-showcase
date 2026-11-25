@@ -51,7 +51,7 @@ const mockWidget = (id: number) => ({
 beforeEach(() => {
   jest.clearAllMocks();
   (api.get as jest.Mock).mockImplementation((url: string) => {
-    if (url === "/widgets/installed") return Promise.resolve({ data: { widget_ids: [] } });
+    if (url === "/widgets/installed") return Promise.resolve({ data: { widgets: [] } });
     if (url === "/widgets") return Promise.resolve({ data: { widgets: [mockWidget(1), mockWidget(2)], has_more: false } });
     return Promise.resolve({ data: {} });
   });
@@ -85,14 +85,14 @@ describe("WidgetsPage", () => {
     await waitFor(() => expect(screen.getByText("Widget 1")).toBeInTheDocument());
 
     (api.get as jest.Mock).mockImplementation((url: string) => {
-      if (url === "/widgets/installed") return Promise.resolve({ data: { widget_ids: [] } });
+      if (url === "/widgets/installed") return Promise.resolve({ data: { widgets: [] } });
       if (url === "/widgets") return Promise.resolve({ data: { widgets: [mockWidget(3)], has_more: false } });
       return Promise.resolve({ data: {} });
     });
 
     await act(async () => { fireEvent.click(screen.getByText("Games")); });
     await waitFor(() => {
-      expect(api.get).toHaveBeenCalledWith("/widgets", { params: { offset: 0, limit: 18, category: "Games" } });
+      expect(api.get).toHaveBeenCalledWith("/widgets", { params: { offset: 0, limit: 18, category: "game" } });
     });
   });
 
@@ -108,7 +108,7 @@ describe("WidgetsPage", () => {
 
   it("shows empty state when no widgets found", async () => {
     (api.get as jest.Mock).mockImplementation((url: string) => {
-      if (url === "/widgets/installed") return Promise.resolve({ data: { widget_ids: [] } });
+      if (url === "/widgets/installed") return Promise.resolve({ data: { widgets: [] } });
       if (url === "/widgets") return Promise.resolve({ data: { widgets: [], has_more: false } });
       return Promise.resolve({ data: {} });
     });

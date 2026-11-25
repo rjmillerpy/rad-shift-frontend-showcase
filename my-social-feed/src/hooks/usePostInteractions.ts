@@ -15,8 +15,6 @@ type Options = {
   onQuote?: (postId: number) => void;
 };
 
-const REPORT_PREFIX = "[REPORT] ";
-
 /** Every action a PostCard offers, wired to the API and to the page's posts.
 
     One implementation for every feed (profiles, search, media, the main
@@ -52,11 +50,19 @@ export function usePostInteractions(setPosts: PostUpdater, options: Options = {}
     [sharePost],
   );
 
+  // Slop marks and reports go to different queues: slop to the ranking,
+  // reports to the admin moderation queue (/admin/reports).
   const flag = useCallback(
-    async (postId: number, reason: string, confirmation: string | null, failure: string) => {
+    async (
+      kind: "slop" | "report",
+      postId: number,
+      reason: string,
+      confirmation: string | null,
+      failure: string,
+    ) => {
       if (!token) return;
       try {
-        await api.post(`/posts/slop/${postId}`, { reason });
+        await api.post(`/posts/${kind}/${postId}`, { reason });
         removePost(postId);
         if (confirmation) alert(confirmation);
       } catch (e) {
@@ -68,15 +74,16 @@ export function usePostInteractions(setPosts: PostUpdater, options: Options = {}
   );
 
   const onMarkSlop = useCallback(
-    (postId: number, reason: string) => flag(postId, reason, null, "Failed to mark as slop."),
+    (postId: number, reason: string) => flag("slop", postId, reason, null, "Failed to mark as slop."),
     [flag],
   );
 
   const onReport = useCallback(
     (postId: number, reason: string) =>
       flag(
+        "report",
         postId,
-        REPORT_PREFIX + reason,
+        reason,
         "Report submitted. This post will no longer appear in your feed.",
         "Failed to submit report.",
       ),

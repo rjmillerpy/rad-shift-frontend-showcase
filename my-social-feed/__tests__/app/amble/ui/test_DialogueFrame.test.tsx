@@ -16,6 +16,7 @@ import {
 import type { EntityAnchor } from "@/app/amble/data/schema";
 import { registerHandler } from "@/app/amble/systems/handlers";
 import { TOWN } from "@/app/amble/data/town";
+import { serveStubContent } from "../_serveStubContent";
 
 // Canned posts come from the town (data/town.ts): read the expectations from it.
 const CORPUS = Object.entries(TOWN.stubPosts);
@@ -53,6 +54,7 @@ describe("DialogueFrame", () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    serveStubContent();
     onOpen.mockClear();
     onClose.mockClear();
     window.addEventListener(DIALOGUE_OPEN_EVENT, onOpen);

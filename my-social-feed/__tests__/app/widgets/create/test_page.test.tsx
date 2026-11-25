@@ -54,7 +54,7 @@ describe("WidgetCreatePage", () => {
     });
   });
 
-  it("save draft calls POST /widgets", async () => {
+  it("save draft creates the widget and nothing more", async () => {
     (api.post as jest.Mock).mockResolvedValue({ data: { id: 42 } });
     render(<WidgetCreatePage />);
     const titleInput = screen.getByPlaceholderText("Widget title...");
@@ -63,15 +63,14 @@ describe("WidgetCreatePage", () => {
     await act(async () => { fireEvent.click(screen.getByText("Save Draft")); });
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith("/widgets", expect.objectContaining({
-        title: "Test Widget",
-        submit_for_review: false,
-      }));
+      expect(api.post).toHaveBeenCalledWith("/widgets", expect.objectContaining({ title: "Test Widget" }));
     });
+    expect(api.post).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith("/widgets/42");
   });
 
-  it("submit calls POST /widgets with submit_for_review true", async () => {
+  // The API ignored a submit_for_review flag on create; submitting is its own call.
+  it("submit creates the widget, then sends it to review", async () => {
     (api.post as jest.Mock).mockResolvedValue({ data: { id: 7 } });
     render(<WidgetCreatePage />);
     const titleInput = screen.getByPlaceholderText("Widget title...");
@@ -80,11 +79,10 @@ describe("WidgetCreatePage", () => {
     await act(async () => { fireEvent.click(screen.getByText("Submit")); });
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith("/widgets", expect.objectContaining({
-        title: "Submit Widget",
-        submit_for_review: true,
-      }));
+      expect(api.post).toHaveBeenCalledWith("/widgets/submit", { widget_id: 7 });
     });
+    expect(api.post).toHaveBeenCalledWith("/widgets", expect.objectContaining({ title: "Submit Widget" }));
+    expect(api.post).not.toHaveBeenCalledWith("/widgets", expect.objectContaining({ submit_for_review: true }));
   });
 
   it("does not save if title is empty", async () => {

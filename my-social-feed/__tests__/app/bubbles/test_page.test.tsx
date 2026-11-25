@@ -1083,8 +1083,8 @@ describe("BubblesFeedPage — Zoomed View", () => {
     await waitFor(() => {
       expect(window.prompt).toHaveBeenCalled();
       expect(mockedApi.post).toHaveBeenCalledWith(
-        expect.stringContaining("/posts/slop/"),
-        expect.objectContaining({ reason: "[REPORT] Spam" })
+        expect.stringContaining("/posts/report/"),
+        expect.objectContaining({ reason: "Spam" })
       );
       expect(window.alert).toHaveBeenCalledWith("Report submitted. This post will no longer appear in your feed.");
     });

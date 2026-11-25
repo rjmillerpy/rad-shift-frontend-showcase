@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import type { WidgetInfo } from "@/types/post";
+import { CATEGORY_MAP } from "@/lib/widgetTemplates";
 import { WIDGET_THEME } from "./theme";
 
 const CATEGORIES = [
@@ -26,7 +27,8 @@ export default function WidgetsPage() {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { offset: pg * PAGE_SIZE, limit: PAGE_SIZE };
-      if (cat !== "All") params.category = cat;
+      // The API filters by key ("game"), not by the tab's label ("Games").
+      if (cat !== "All") params.category = CATEGORY_MAP[cat] ?? cat;
       const res = await api.get("/widgets", { params });
       const fetched: WidgetInfo[] = res.data.widgets ?? res.data;
       setWidgets(append ? (prev) => [...prev, ...fetched] : fetched);
@@ -45,7 +47,7 @@ export default function WidgetsPage() {
 
   useEffect(() => {
     api.get("/widgets/installed").then((res) => {
-      const ids: number[] = res.data.widget_ids ?? res.data.map?.((w: WidgetInfo) => w.id) ?? [];
+      const ids: number[] = (res.data.widgets ?? []).map((w: WidgetInfo) => w.id);
       setInstalledIds(new Set(ids));
     }).catch((e) => { console.error("Failed to fetch installed widgets:", e); });
   }, []);

@@ -52,6 +52,18 @@ describe("useLedgerActions", () => {
     expect(mockPush).toHaveBeenCalledWith(expected);
   });
 
+  // A report goes to the moderation queue (/posts/report), not the slop list.
+  it.each([
+    ["slop",   "AI",   "/posts/slop/7"],
+    ["report", "Spam", "/posts/report/7"],
+  ])("%s asks for a reason and files it", async (action, reason, path) => {
+    jest.spyOn(window, "prompt").mockReturnValue(reason);
+    mockedApi.post.mockResolvedValue({ data: {} });
+    const { result } = renderHook(() => useLedgerActions(jest.fn()));
+    await act(async () => { await result.current(action, makePost({ id: 7 })); });
+    expect(mockedApi.post).toHaveBeenCalledWith(path, { reason });
+  });
+
   it("logs on failure but still fires onDone (graceful degrade)", async () => {
     const spy = jest.spyOn(console, "error").mockImplementation(() => {});
     mockedApi.post.mockRejectedValue(new Error("boom"));

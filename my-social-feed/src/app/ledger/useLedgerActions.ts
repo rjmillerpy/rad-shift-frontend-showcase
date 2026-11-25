@@ -20,12 +20,12 @@ async function sharePost(post: Post): Promise<void> {
   alert("Post link copied!");
 }
 
-async function reportSlop(post: Post, prefix: string, defaultReason: string): Promise<void> {
-  const reason = prompt(`${prefix}?`, defaultReason);
+/** Asks for a reason, then files it: a slop mark ranks the post down, a report
+    goes to the admin moderation queue (reports used to be filed as slop marks). */
+async function flagPost(post: Post, kind: "slop" | "report", question: string, defaultReason: string): Promise<void> {
+  const reason = prompt(`${question}?`, defaultReason);
   if (!reason) return;
-  await api.post(`/posts/slop/${post.id}`, {
-    reason: prefix === "Report reason" ? `[REPORT] ${reason}` : reason,
-  });
+  await api.post(`/posts/${kind}/${post.id}`, { reason });
 }
 
 type Handlers = Record<string, (post: Post) => Promise<void> | void>;
@@ -40,8 +40,8 @@ export function useLedgerActions(onDone: () => void) {
   const handle = useCallback(async (action: string, post: Post) => {
     const handlers: Handlers = {
       share:   (p) => sharePost(p),
-      slop:    (p) => reportSlop(p, "Why is this slop", "AI"),
-      report:  (p) => reportSlop(p, "Report reason", "Harassment"),
+      slop:    (p) => flagPost(p, "slop", "Why is this slop", "AI"),
+      report:  (p) => flagPost(p, "report", "Report reason", "Harassment"),
       quote:   (p) => { router.push(`/post/${p.id}?quote=1`); },
       replies: (p) => { router.push(`/post/${p.id}?reply=1`); },
     };

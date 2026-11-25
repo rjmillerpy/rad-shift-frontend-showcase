@@ -8,7 +8,7 @@ import Modal from "@/components/Modal";
 import type { WidgetInfo } from "@/types/post";
 import { WIDGET_THEME } from "../theme";
 
-interface Review { id: number; username: string; rating: number; text: string; created_at: string; }
+interface Review { id: number; username: string; rating: number; text: string; created_at: number; }
 
 const { bg, card, border, accent, textPrimary, textSecondary } = WIDGET_THEME;
 

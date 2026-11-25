@@ -65,10 +65,12 @@ describe("usePostInteractions", () => {
       expect(posts().map((p) => p.id)).toEqual([2]);
     });
 
-    it("reporting prefixes the reason, drops the post and confirms", async () => {
+    // Reports used to be filed as slop marks ("[REPORT] " + reason), so they
+    // never reached the admin moderation queue.
+    it("reporting files a report with the reason, drops the post and confirms", async () => {
       const { result, posts } = setup();
       await act(() => result.current.onReport(2, "Spam"));
-      expect(mockedApi.post).toHaveBeenCalledWith("/posts/slop/2", { reason: "[REPORT] Spam" });
+      expect(mockedApi.post).toHaveBeenCalledWith("/posts/report/2", { reason: "Spam" });
       expect(posts().map((p) => p.id)).toEqual([1]);
       expect(window.alert).toHaveBeenCalledWith("Report submitted. This post will no longer appear in your feed.");
     });

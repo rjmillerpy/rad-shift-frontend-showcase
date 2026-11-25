@@ -3,9 +3,9 @@
  * Wraps the shared `ambleGet` client so this file only contains the URL
  * shape + Zod validation at the boundary (rule 5).
  *
- * Phase 1.4a: backend endpoint hasn't been built yet (that's 1.4b), so
- * `USE_STUB` is true in dev. Flip to false — or set the env var — once
- * the real endpoint ships.
+ * The backend endpoint (GET /amble/content/{entity_id}) shipped in 1.4b,
+ * and since 2026-11-25 Amble reads from it: `USE_STUB` is false. The stub
+ * (content-stub.ts) stays for working on the town offline.
  */
 import {
   AmbleContentResponseSchema,
@@ -16,10 +16,9 @@ import { fetchStubContent } from "./content-stub";
 
 const ENDPOINT_BASE = "/amble/content";
 
-// Toggled off in 1.4b when the real backend ships. Keeping it as an
-// exported const rather than an env var so tests can override it without
-// process.env plumbing.
-export const USE_STUB = true;
+// An exported const rather than an env var so tests can see which branch
+// runs without process.env plumbing. Set true to work on the town offline.
+export const USE_STUB = false;
 
 /** Fetch the next slice of content for a given entity. `cursor` comes from
     the previous response's `next_cursor` (null on the first request). */
