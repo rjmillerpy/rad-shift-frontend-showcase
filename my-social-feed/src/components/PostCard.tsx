@@ -11,6 +11,7 @@ import QuotedPostPreview from "@/components/QuotedPostPreview";
 import PostMetadataExpansion from "@/components/PostMetadataExpansion";
 import PostSourceBadge from "@/components/PostSourceBadge";
 import LinkCard from "@/components/LinkCard";
+import CommunityNote from "@/components/CommunityNote";
 const ImageGallery = dynamic(() => import("@/components/ImageGallery"), {
   ssr: false,
 });
@@ -244,6 +245,12 @@ function PostCard({
                 metadata={post.media_metadata}
               />
             )}
+
+            <CommunityNote
+              postId={post.id}
+              note={post.community_note}
+              canAddNote={Boolean(token) && !post.is_me}
+            />
           </>
         )}
 

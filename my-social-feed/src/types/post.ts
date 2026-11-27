@@ -74,7 +74,16 @@ export interface Post {
   quoted_post?: QuotedPost | null;
   // Shown in place of the post until the reader chooses to see it.
   content_warning?: string | null;
+  // The community note shown under the post, once raters who usually
+  // disagree both found it helpful (backend app/community_notes/).
+  community_note?: CommunityNoteSummary | null;
 }
+
+export type CommunityNoteSummary = {
+  id: number;
+  text: string;
+  source_url: string | null;
+};
 
 export interface WidgetInfo {
   id: number;

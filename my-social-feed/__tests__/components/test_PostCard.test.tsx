@@ -465,4 +465,27 @@ describe('PostCard', () => {
     expect(screen.getByAltText('Post')).toBeInTheDocument();
     expect(screen.queryByText('Content warning: spoilers')).not.toBeInTheDocument();
   });
+
+  describe('community note', () => {
+    const note = { id: 3, text: 'The photo is from 2019.', source_url: null };
+
+    it('shows the post\'s helpful note under it', () => {
+      render(<PostCard post={makePost({ community_note: note })} {...defaultProps} />);
+      expect(screen.getByRole('complementary', { name: 'Readers added context' })).toHaveTextContent('The photo is from 2019.');
+    });
+
+    it('stays covered with the rest of the post behind a content warning', () => {
+      render(<PostCard post={makePost({ community_note: note, content_warning: 'spoilers' })} {...defaultProps} />);
+      expect(screen.queryByText('The photo is from 2019.')).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ['a signed-in reader', 'tok', false, true],
+      ['the post\'s own author', 'tok', true, false],
+      ['a signed-out visitor', null, false, false],
+    ])('offers "Add context" to %s: %s', (_who, token, isMe, offered) => {
+      render(<PostCard post={makePost({ is_me: isMe })} {...defaultProps} token={token} />);
+      expect(Boolean(screen.queryByRole('button', { name: 'Add context' }))).toBe(offered);
+    });
+  });
 });
