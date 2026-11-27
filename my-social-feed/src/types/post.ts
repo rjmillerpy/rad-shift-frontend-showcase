@@ -77,7 +77,11 @@ export interface Post {
   // The community note shown under the post, once raters who usually
   // disagree both found it helpful (backend app/community_notes/).
   community_note?: CommunityNoteSummary | null;
+  // Why the post is labelled AI-generated, or null (backend posts.ai_label).
+  ai_label?: AiLabel | null;
 }
+
+export type AiLabel = "author" | "content_credentials" | "moderator";
 
 export type CommunityNoteSummary = {
   id: number;

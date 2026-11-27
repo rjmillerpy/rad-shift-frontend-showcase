@@ -12,6 +12,7 @@ import PostMetadataExpansion from "@/components/PostMetadataExpansion";
 import PostSourceBadge from "@/components/PostSourceBadge";
 import LinkCard from "@/components/LinkCard";
 import CommunityNote from "@/components/CommunityNote";
+import AiLabelBadge from "@/components/AiLabelBadge";
 const ImageGallery = dynamic(() => import("@/components/ImageGallery"), {
   ssr: false,
 });
@@ -165,6 +166,8 @@ function PostCard({
             </button>
           </div>
         )}
+
+        <AiLabelBadge label={post.ai_label} />
 
         {!covered && (
           <>

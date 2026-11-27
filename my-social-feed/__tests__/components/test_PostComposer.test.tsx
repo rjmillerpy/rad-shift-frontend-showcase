@@ -327,4 +327,24 @@ describe('PostComposer', () => {
     expect(first.get('content_warning')).toBe('spoilers');
     expect(second.has('content_warning')).toBe(false);
   });
+
+  it('sends "made with AI" only when ticked, and unticks after posting', async () => {
+    mockedApi.post.mockResolvedValue({ data: {} });
+    render(<PostComposer {...defaultProps} />);
+    const box = screen.getByRole('checkbox', { name: /Made with AI/ });
+
+    await userEvent.type(screen.getByPlaceholderText('Write a post...'), 'A painting');
+    fireEvent.click(box);
+    fireEvent.click(screen.getByText('Post'));
+    await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(box).not.toBeChecked());
+
+    await userEvent.type(screen.getByPlaceholderText('Write a post...'), 'A photo');
+    fireEvent.click(screen.getByText('Post'));
+    await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(2));
+
+    const [first, second] = mockedApi.post.mock.calls.map((c) => c[1] as FormData);
+    expect(first.get('ai_generated')).toBe('true');
+    expect(second.has('ai_generated')).toBe(false);
+  });
 });

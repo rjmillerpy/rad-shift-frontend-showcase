@@ -488,4 +488,9 @@ describe('PostCard', () => {
       expect(Boolean(screen.queryByRole('button', { name: 'Add context' }))).toBe(offered);
     });
   });
+
+  it('shows the AI-generated label, even when a content warning covers the post', () => {
+    render(<PostCard post={makePost({ ai_label: 'author', content_warning: 'spoilers' })} {...defaultProps} />);
+    expect(screen.getByText(/AI-generated/)).toBeInTheDocument();
+  });
 });

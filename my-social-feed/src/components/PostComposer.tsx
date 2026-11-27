@@ -30,6 +30,7 @@ export default function PostComposer({
   const [taggedUsers, setTaggedUsers] = useState("");
   const [location, setLocation] = useState("");
   const [contentWarning, setContentWarning] = useState("");
+  const [madeWithAi, setMadeWithAi] = useState(false);
 
   const submitPost = async (isDraft: boolean) => {
     if (!newPost.trim()) return;
@@ -75,6 +76,9 @@ export default function PostComposer({
     if (contentWarning.trim()) {
       formData.append("content_warning", contentWarning.trim());
     }
+    if (madeWithAi) {
+      formData.append("ai_generated", "true");
+    }
     if (quotePostId !== null) {
       formData.append("parent_post_id", String(quotePostId));
     }
@@ -92,6 +96,7 @@ export default function PostComposer({
       setTaggedUsers("");
       setLocation("");
       setContentWarning("");
+      setMadeWithAi(false);
       setShowMetadata(false);
       onClearQuote();
 
@@ -128,6 +133,14 @@ export default function PostComposer({
           fontSize: "13px",
         }}
       />
+      <label style={{ display: "block", fontSize: "13px", marginBottom: "10px" }}>
+        <input
+          type="checkbox"
+          checked={madeWithAi}
+          onChange={(e) => setMadeWithAi(e.target.checked)}
+        />{" "}
+        Made with AI (adds an &quot;AI-generated&quot; label)
+      </label>
 
       {quotePreview && (
         <div
