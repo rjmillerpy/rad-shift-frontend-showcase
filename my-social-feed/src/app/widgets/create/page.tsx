@@ -6,6 +6,9 @@ import api from "@/lib/api";
 import { getTemplateForCategory, CATEGORY_MAP } from "@/lib/widgetTemplates";
 import CodePanel from "@/components/CodePanel";
 import { WIDGET_THEME } from "../theme";
+import { memoryStore } from "../storage/bridge";
+import { withSdk } from "../storage/sdk";
+import { useWidgetStorage } from "../storage/useWidgetStorage";
 
 type PanelId = "html" | "css" | "js" | "compute";
 
@@ -60,6 +63,9 @@ export default function WidgetCreatePage() {
 
   // Preview & execution
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  // The preview's radshift.storage keeps values in memory: nothing is saved yet.
+  const previewStore = useMemo(memoryStore, []);
+  const previewRef = useWidgetStorage(previewStore);
   const [computeOutput, setComputeOutput] = useState('');
   const [saving, setSaving] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -88,7 +94,7 @@ export default function WidgetCreatePage() {
   }, [title]);
 
   const handlePreview = useCallback(() => {
-    setPreviewHtml(buildWidgetDocument(htmlCode, cssCode, jsCode));
+    setPreviewHtml(withSdk(buildWidgetDocument(htmlCode, cssCode, jsCode)));
   }, [htmlCode, cssCode, jsCode]);
 
   const handleRunCompute = useCallback(async () => {
@@ -272,6 +278,7 @@ export default function WidgetCreatePage() {
           </div>
           {previewHtml ? (
             <iframe
+              ref={previewRef}
               srcDoc={previewHtml}
               sandbox="allow-scripts allow-forms"
               style={{ width: "100%", height: 350, border: "none", background: "#fff" }}

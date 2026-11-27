@@ -447,4 +447,22 @@ describe('PostCard', () => {
     // No source label or hostname text leaked into the DOM
     expect(screen.queryByText(/Reddit ·/)).not.toBeInTheDocument();
   });
+
+  it('covers a post with a content warning until the reader chooses to see it', () => {
+    render(
+      <PostCard
+        post={makePost({ content_warning: 'spoilers', image_url: 'http://img.com/pic.jpg' })}
+        {...defaultProps}
+      />,
+    );
+    expect(screen.getByText('Content warning: spoilers')).toBeInTheDocument();
+    expect(screen.queryByText('Hello world')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('Post')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Show post'));
+
+    expect(screen.getByText('Hello world')).toBeInTheDocument();
+    expect(screen.getByAltText('Post')).toBeInTheDocument();
+    expect(screen.queryByText('Content warning: spoilers')).not.toBeInTheDocument();
+  });
 });

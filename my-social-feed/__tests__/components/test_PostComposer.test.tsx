@@ -308,4 +308,23 @@ describe('PostComposer', () => {
       expect(formData.getAll('images').length).toBe(2);
     });
   });
+
+  it('sends a content warning only when one is written', async () => {
+    mockedApi.post.mockResolvedValue({ data: {} });
+    render(<PostComposer {...defaultProps} />);
+
+    await userEvent.type(screen.getByPlaceholderText('Write a post...'), 'The ending');
+    await userEvent.type(screen.getByLabelText('Content warning'), '  spoilers ');
+    fireEvent.click(screen.getByText('Post'));
+    await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByLabelText('Content warning')).toHaveValue(''));
+
+    await userEvent.type(screen.getByPlaceholderText('Write a post...'), 'Plain');
+    fireEvent.click(screen.getByText('Post'));
+    await waitFor(() => expect(mockedApi.post).toHaveBeenCalledTimes(2));
+
+    const [first, second] = mockedApi.post.mock.calls.map((c) => c[1] as FormData);
+    expect(first.get('content_warning')).toBe('spoilers');
+    expect(second.has('content_warning')).toBe(false);
+  });
 });

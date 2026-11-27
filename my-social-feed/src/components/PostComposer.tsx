@@ -29,6 +29,7 @@ export default function PostComposer({
   const [tags, setTags] = useState("");
   const [taggedUsers, setTaggedUsers] = useState("");
   const [location, setLocation] = useState("");
+  const [contentWarning, setContentWarning] = useState("");
 
   const submitPost = async (isDraft: boolean) => {
     if (!newPost.trim()) return;
@@ -63,11 +64,17 @@ export default function PostComposer({
 
     const postMetadata = JSON.stringify({
       tags,
-      tagged_users: taggedUsers.split(",").map((u) => u.trim()).filter(Boolean),
+      tagged_users: taggedUsers
+        .split(",")
+        .map((u) => u.trim())
+        .filter(Boolean),
       location,
     });
     formData.append("post_metadata", postMetadata);
     formData.append("is_draft", String(isDraft));
+    if (contentWarning.trim()) {
+      formData.append("content_warning", contentWarning.trim());
+    }
     if (quotePostId !== null) {
       formData.append("parent_post_id", String(quotePostId));
     }
@@ -84,6 +91,7 @@ export default function PostComposer({
       setTags("");
       setTaggedUsers("");
       setLocation("");
+      setContentWarning("");
       setShowMetadata(false);
       onClearQuote();
 
@@ -105,6 +113,20 @@ export default function PostComposer({
         value={newPost}
         onChange={(e) => setNewPost(e.target.value)}
         style={{ width: "100%", padding: "10px", marginBottom: "10px" }}
+      />
+      <input
+        type="text"
+        placeholder="Content warning (optional, e.g. spoilers)"
+        aria-label="Content warning"
+        maxLength={100}
+        value={contentWarning}
+        onChange={(e) => setContentWarning(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "6px 10px",
+          marginBottom: "10px",
+          fontSize: "13px",
+        }}
       />
 
       {quotePreview && (

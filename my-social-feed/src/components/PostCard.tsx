@@ -11,7 +11,9 @@ import QuotedPostPreview from "@/components/QuotedPostPreview";
 import PostMetadataExpansion from "@/components/PostMetadataExpansion";
 import PostSourceBadge from "@/components/PostSourceBadge";
 import LinkCard from "@/components/LinkCard";
-const ImageGallery = dynamic(() => import("@/components/ImageGallery"), { ssr: false });
+const ImageGallery = dynamic(() => import("@/components/ImageGallery"), {
+  ssr: false,
+});
 import { DEFAULT_AVATAR } from "@/lib/config";
 import { proxyIfNeeded } from "@/lib/utils";
 import type { Post } from "@/types/post";
@@ -57,6 +59,8 @@ function PostCard({
   const [expandedMetadata, setExpandedMetadata] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [hoveredPost, setHoveredPost] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const covered = Boolean(post.content_warning) && !revealed;
   const defaultAvatar = DEFAULT_AVATAR;
   const sourceMeta = post.post_metadata?.source;
   const linkCard = post.post_metadata?.link_card;
@@ -137,68 +141,110 @@ function PostCard({
           </button>
         )}
         {post.reposted_by && post.reposted_by.length > 0 && (
-          <div
-            style={{ fontSize: "12px", color: "gray", marginLeft: "5px" }}
-          >
+          <div style={{ fontSize: "12px", color: "gray", marginLeft: "5px" }}>
             Reposted by {post.reposted_by.join(", ")}
           </div>
         )}
-        {sourceMeta && !linkCard && <PostSourceBadge source={sourceMeta} />}
-
-        {!linkCard && (
-          <Link
-            href={`/post/${post.id}`}
-            style={{ textDecoration: "none", color: "inherit" }}
-            onMouseEnter={() => setHoveredPost(true)}
-            onMouseLeave={() => setHoveredPost(false)}
-          >
-            <p style={{
-              margin: "5px 0",
-              marginLeft: "5px",
-              cursor: "pointer",
-              borderRadius: "6px",
-              padding: "4px 6px",
-              background: hoveredPost ? "#f0f0f0" : "transparent",
-              transition: "background 0.15s ease-in-out",
-            }}>{post.text}</p>
-          </Link>
-        )}
-
-        {linkCard && (
-          <LinkCard linkCard={linkCard} source={sourceMeta} bodyText={post.text} />
-        )}
-
-        {post.quoted_post && <QuotedPostPreview quotedPost={post.quoted_post} />}
-
-        {(post.image_urls && post.image_urls.length > 1) ? (
-          <ImageGallery images={post.image_urls} variants={post.image_variants} />
-        ) : post.image_url ? (
-          <img
-            src={proxyIfNeeded(post.image_url)}
-            srcSet={srcSetFor(post.image_variants, post.image_url, proxyIfNeeded)}
-            sizes={FEED_IMAGE_SIZES}
-            crossOrigin="anonymous"
-            alt="Post"
+        {covered && (
+          <div
+            role="note"
             style={{
-              maxWidth: "100%",
-              borderRadius: "10px",
-              marginTop: "10px",
+              margin: "5px 0 5px 5px",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              background: "#f3f3f3",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
             }}
-          />
-        ) : null}
-
-        {post.video_url && (
-          <VideoPlayer src={post.video_url} metadata={post.media_metadata} />
+          >
+            <span>Content warning: {post.content_warning}</span>
+            <button type="button" onClick={() => setRevealed(true)}>
+              Show post
+            </button>
+          </div>
         )}
 
-        {post.audio_url && (
-          <AudioPlayer
-            src={post.audio_url}
-            postId={post.id}
-            username={post.username}
-            text={post.text}
-            metadata={post.media_metadata}
-          />
+        {!covered && (
+          <>
+            {sourceMeta && !linkCard && <PostSourceBadge source={sourceMeta} />}
+
+            {!linkCard && (
+              <Link
+                href={`/post/${post.id}`}
+                style={{ textDecoration: "none", color: "inherit" }}
+                onMouseEnter={() => setHoveredPost(true)}
+                onMouseLeave={() => setHoveredPost(false)}
+              >
+                <p
+                  style={{
+                    margin: "5px 0",
+                    marginLeft: "5px",
+                    cursor: "pointer",
+                    borderRadius: "6px",
+                    padding: "4px 6px",
+                    background: hoveredPost ? "#f0f0f0" : "transparent",
+                    transition: "background 0.15s ease-in-out",
+                  }}
+                >
+                  {post.text}
+                </p>
+              </Link>
+            )}
+
+            {linkCard && (
+              <LinkCard
+                linkCard={linkCard}
+                source={sourceMeta}
+                bodyText={post.text}
+              />
+            )}
+
+            {post.quoted_post && (
+              <QuotedPostPreview quotedPost={post.quoted_post} />
+            )}
+
+            {post.image_urls && post.image_urls.length > 1 ? (
+              <ImageGallery
+                images={post.image_urls}
+                variants={post.image_variants}
+              />
+            ) : post.image_url ? (
+              <img
+                src={proxyIfNeeded(post.image_url)}
+                srcSet={srcSetFor(
+                  post.image_variants,
+                  post.image_url,
+                  proxyIfNeeded,
+                )}
+                sizes={FEED_IMAGE_SIZES}
+                crossOrigin="anonymous"
+                alt="Post"
+                style={{
+                  maxWidth: "100%",
+                  borderRadius: "10px",
+                  marginTop: "10px",
+                }}
+              />
+            ) : null}
+
+            {post.video_url && (
+              <VideoPlayer
+                src={post.video_url}
+                metadata={post.media_metadata}
+              />
+            )}
+
+            {post.audio_url && (
+              <AudioPlayer
+                src={post.audio_url}
+                postId={post.id}
+                username={post.username}
+                text={post.text}
+                metadata={post.media_metadata}
+              />
+            )}
+          </>
         )}
 
         {post.post_metadata && expandedMetadata && (

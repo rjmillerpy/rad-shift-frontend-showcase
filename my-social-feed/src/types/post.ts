@@ -72,6 +72,8 @@ export interface Post {
   parent_post_id?: number | null;
   media_metadata?: MediaMetadata | null;
   quoted_post?: QuotedPost | null;
+  // Shown in place of the post until the reader chooses to see it.
+  content_warning?: string | null;
 }
 
 export interface WidgetInfo {

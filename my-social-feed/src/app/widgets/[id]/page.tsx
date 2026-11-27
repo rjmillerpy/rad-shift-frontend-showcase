@@ -1,12 +1,15 @@
 "use client";
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { API_URL } from "@/lib/config";
 import Modal from "@/components/Modal";
 import type { WidgetInfo } from "@/types/post";
+import { useAuth } from "@/hooks/useAuth";
 import { WIDGET_THEME } from "../theme";
+import { apiStore, signedOutStore } from "../storage/bridge";
+import { useWidgetStorage } from "../storage/useWidgetStorage";
 
 interface Review { id: number; username: string; rating: number; text: string; created_at: number; }
 
@@ -20,6 +23,10 @@ export default function WidgetDetailPage() {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // radshift.storage in the widget saves through the API for the signed-in viewer.
+  const { token } = useAuth();
+  const store = useMemo(() => (token ? apiStore(Number(id)) : signedOutStore()), [token, id]);
+  const frameRef = useWidgetStorage(store);
   const [myRating, setMyRating] = useState(0);
   const [hoverStar, setHoverStar] = useState(0);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -120,6 +127,7 @@ export default function WidgetDetailPage() {
             </button>
           </div>
           <iframe
+            ref={frameRef}
             src={`${API_URL}/widgets/${id}/render`}
             sandbox="allow-scripts allow-forms"
             style={{ width: iframeW, height: iframeH, border: `1px solid ${border}`, borderRadius: 8, background: "#fff", display: "block", margin: "0 auto", transition: "all 0.2s" }}
